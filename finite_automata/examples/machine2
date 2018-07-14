@@ -1,0 +1,24 @@
+# DFA defined as:
+# M = (Q, SIGMA, delta, q0, F) where:
+#   Q = finite set of states
+#   F = subset of Q containing the accept states
+#   SIGMA = finite set of alphabet
+#   delta = transition function defined as:
+#         delta: Q x SIGMA --> Q
+#   q0 = initial state
+#
+# This machine accepts the following language:
+#       A = {w in Binary Numbers Set | w = 2^n with n >= 0}
+Q q0 q1 q2 q3
+F q0 q2
+SIGMA 0 1
+delta q0 0 q0
+delta q0 1 q1
+delta q1 0 q2
+delta q1 1 q3
+delta q2 0 q2
+delta q2 1 q3
+delta q3 0 q3
+delta q3 1 q3
+q0 q0
+

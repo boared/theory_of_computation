@@ -1,0 +1,10 @@
+# Language A = {w in Binary Numbers Set | w = 2^n with n >= 0}
+0
+10
+100
+1000
+100000
+1000000
+010
+0010
+000100
