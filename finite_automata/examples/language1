@@ -1,0 +1,7 @@
+# Language A = {the sum of numerical input symbols modulo 3 is 0. R symbol resets the count}
+0121R111
+01202221202R12002211R2211
+012
+R
+11112
+1111R
