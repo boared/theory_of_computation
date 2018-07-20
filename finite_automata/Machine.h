@@ -2,40 +2,45 @@
 #define MACHINE_H
 
 #include <set>
-
+#include <iostream>
 #include <State.h>
 #include <TransitionFunction.h>
 
 namespace machine {
 
     /**
-     * Deterministic Finite Automaton.
+     * Non-deterministic Finite Automaton.
      *
-     * A DFA is a machine defined as:
-     *  M = (Q, F, SIGMA, delta, q0) where:
+     * A NFA is a machine defined as:
+     *  M = (Q, ∑, δ, q0, F) where:
      *      Q = finite set of states
-     *      F = subset of Q containing the accept states
-     *      SIGMA = finite set of alphabet symbols
-     *      delta = transition function defined as:
-     *          delta: Q x SIGMA --> Q
+     *      ∑ = finite set of alphabet symbols
+     *      δ = transition function defined as:
+     *          δ: Q X {∑, ε} --> P(Q),
+     *              where ε denotes the empty string - that means the transition is done
+     *              but the next symbol is not read - and P(Q) is the power set of Q.
      *      q0 = initial state
+     *      F = subset of Q containing the accept states
+     * 
+     * This machine can simulate a Deterministic Finite Automaton as well as DFAs are a
+     * subset of NFA.
      */
-    class DFA {
+    class NFA {
         private:
             /**
-             * Machine states
-             */ 
+             * Represents an empty word in a transition step
+             */
+            const std::string EMPTY_WORD = "<eps>";
+            
+            /**
+             * Used to align printed steps.
+             */
+            const std::string TAB = "  ";
+
+            /**
+             * Set of states
+             */
             std::set<State> Q;
-
-            /**
-             * Accept states
-             */
-            std::set<State> F;
-
-            /**
-             * Initial state
-             */
-            State q0;
 
             /**
              * Transition function
@@ -43,51 +48,117 @@ namespace machine {
             TransitionFunction delta;
 
             /**
-             * Represents the current state of the machine
+             * Initial state
              */
-            State currentState;
+            State q0;
 
             /**
-             * Process the input symbol calling the transition function with the current state.
+             * Accept states (a subset of Q)
              */
-            void process(const std::string& symbol) {
-                const State nextState = delta.compute(currentState, symbol);
-                std::cout << "<" << currentState.getName() << "," << symbol << "> --> " << nextState.getName() << "\n";
-                currentState = nextState;
+            std::set<State> F;
+
+            /**
+             * Verify if a given state is in F
+             */
+            bool isAcceptState(const State& state) {
+                return F.find(state) != F.end();
+            }
+
+            /**
+             * Executes the machine to verify if a word is accepted or not.
+             */
+            bool accept(const std::string& tab, const State& currentState, const std::string& word) {
+                // Symbol to be evaluated
+                std::string symbol;
+
+                // Check if the current state has e-moves. That means we need to execute e-move branches without
+                // reading the next symbol
+                std::set<State> e_move_states = transition(tab, currentState, EMPTY_WORD);
+
+                if (word.empty()) {
+                    symbol = EMPTY_WORD;
+
+                    // If there's no further data in input to be read and no e-moves, then
+                    // verify if the word is accepted or not
+                    if (e_move_states.empty()) {
+                        return isAcceptState(currentState);
+                    }
+                } else {
+                    symbol = word[0];
+                }
+
+                // Let's check which transitions we need to do
+                std::set<State> states;
+                if (symbol != EMPTY_WORD) {
+                    states = transition(tab, currentState, symbol);
+                }
+
+                bool accept = false;
+
+                // We're going to execute all transitions and e-moves now. Theorethically they run in parallel, but
+                // we're executing them sequentially here for simplicity. If any replicated machine returns true, then
+                // the machine accepts the word.
+
+                // Let's execute the e-moves now. Notice that we pass the same input word to the accept method as we
+                // will process the same head symbol in the e-move branch
+                for (const State& state : e_move_states) {
+                    NFA m(*this);
+                    accept = accept || m.accept(tab + "|" + TAB, state, word);
+                }
+
+                // Let's execute the transitions. Notice that we remove the symbol processed here for the further steps.
+                for (const State& state : states) {
+                    NFA m(*this);
+                    accept = accept || m.accept(tab + "|" + TAB, state, word.substr(1, std::string::npos));
+                }
+
+                return accept;
+            }
+
+            /**
+             * Given an state and a symbol returns the set of transition states
+             */
+            std::set<State> transition(const std::string& tab, const State& state, const std::string& symbol) {
+                std::set<State> states = delta.mapping(state, symbol);
+
+                if (!states.empty()) {
+                    std::cout << tab << "<" << state.getName() << "," << symbol << "> --> ";
+                    for (const auto& state : states) {
+                        std::cout << state.getName() << " ";
+                    }
+
+                    std::cout << "\n";
+                }
+
+                return states;
             }
 
         public:
-            DFA(const std::set<State>& Q,
-                const std::set<State>& F,
+            NFA(const std::set<State>& Q,
+                const TransitionFunction& delta,
                 const State& q0,
-                const TransitionFunction& delta) :
+                const std::set<State>& F) :
                 Q(Q),
-                F(F),
-                q0(q0),
                 delta(delta),
-                currentState(q0.getName())
+                q0(q0),
+                F(F)
             {
             }
 
+            NFA(const NFA& copy) : NFA(copy.Q, copy.delta, copy.q0, copy.F) { }
+
             /**
-             * Given a word as input, verify if it's accepted by the machine or not.
+             * Given an input word, the machine returns true
+             * if it accepts the word, false otherwise.
              */
-            bool accepts(const std::string& word) {
-                currentState = q0;
+            bool accept(const std::string& word) {
+                std::cout << "***** Computing word [" << word << "] *****\n";
 
-                std::cout << "\nComputing [" << word << "]:\n";
-                for (int i = 0; i < word.size(); i++) {
-                    // The automaton process one symbol at a time
-                    const std::string symbol = word.substr(i, 1);
+                bool status = accept("", q0, word);
 
-                    // Process the symbol
-                    process(symbol);
-                }
-                std::cout << "\n";
+                std::cout << "***** Word [" << word << "] is : " << (status? "accepted" : "rejected") << "! *****\n\n";
 
-                // After processing all the symbols, if the current
-                // state is in F, then the machine accepts the word
-                return F.find(currentState) != F.end();
+                return status;
             }
     };
 }
