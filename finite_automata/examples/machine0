@@ -1,4 +1,4 @@
-# DFA defined as:
+# Example of DFA defined as:
 # M = (Q, F, SIGMA, delta, q0) where:
 #   Q = finite set of states
 #   F = subset of Q containing the accept states
@@ -6,6 +6,18 @@
 #   delta = transition function defined as:
 #         delta: Q x SIGMA --> Q
 #   q0 = initial state
+#
+#   Each input line is of the form "<type> <str1> <str2> ..." where:
+#       <type> is one of Q, F, SIGMA, delta or q0
+#       <strN> are strings representing the items of a given type.
+#
+#       Q = one or more strings representing states
+#       F = one or more strings that exists in Q
+#       SIGMA = one or more strings representing the alphabet symbols
+#       q0 = one single string that exists in Q
+#       delta = one string representing a state in Q, one string representing a symbol in SIGMA, and one or more strings
+#           representing to which state the transition will go to.
+#
 #
 # This machine accepts the following language:
 #       A = {w | w=w1w2...wn, n >= 2, wi in {0,1}, wn-1=1 and wn=0}

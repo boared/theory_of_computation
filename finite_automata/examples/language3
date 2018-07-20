@@ -1,0 +1,9 @@
+# Language A = {w in Binary Numbers Set | w has 101 or 11 as substring}
+11
+101
+10110
+101010
+100000101
+01010
+0011110
+010110
