@@ -33,7 +33,7 @@ std::set<State> createStates(const std::vector<std::string>& list) {
     return states;
 }
 
-machine::DFA readDFAFile(const std::string& path) {
+machine::NFA readDFAFile(const std::string& path) {
     std::string line;
     std::ifstream file(path);
 
@@ -52,8 +52,10 @@ machine::DFA readDFAFile(const std::string& path) {
                     Q = createStates(split_string);
                 }
                 else if (key == "delta") {
-                    for (int i = 1; i < split_string.size(); i += 3) {
-                        delta.addTransition(State(split_string[i]), split_string[i+1], State(split_string[i+2]));
+                    const std::string& state = split_string[1];
+                    const std::string& symbol = split_string[2];
+                    for (int i = 3; i < split_string.size(); i++) {
+                        delta.addTransition(State(state), symbol, State(split_string[i]));
                     }
                 }
                 else if (key == "q0") {
@@ -67,7 +69,7 @@ machine::DFA readDFAFile(const std::string& path) {
         file.close();
     }
 
-    return machine::DFA(Q, F, q0, delta);
+    return machine::NFA(Q, delta, q0, F);
 }
 
 std::vector<std::string> readLanguageFile(const std::string& path) {
@@ -95,22 +97,20 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    machine::DFA dfa = readDFAFile(std::string(argv[1]));
+    machine::NFA nfa = readDFAFile(std::string(argv[1]));
     std::vector<std::string> words = readLanguageFile(std::string(argv[2]));
 
-    std::cout << "Validating language\n\n";
+    std::cout << "***** Validating language *****\n\n";
     bool languageAccepted = true;
     for (auto& word : words) {
-        bool accepts = dfa.accepts(word);
-
-        std::cout << "Word " << word << " is " << (accepts? "accepted" : "rejected") << "\n";
+        bool accepts = nfa.accept(word);
 
         if (!accepts) {
             languageAccepted = false;
         }
     }
 
-    std::cout << "\nLanguage is " << (languageAccepted? "accepted" : "rejected") << " by the machine\n";
+    std::cout << "\n***** Language is " << (languageAccepted? "accepted" : "rejected") << " by the machine. *****\n";
 
     return 0;
 }
