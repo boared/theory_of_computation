@@ -1,0 +1,13 @@
+# Accepts language A = {w | w has symbol 1 in position n-3, where n is the length of w}
+Q q1 q2 q3 q4
+SIGMA 0 1
+delta q1 0 q1
+delta q1 1 q1 q2
+delta q2 0 q3
+delta q2 1 q3
+delta q2 <eps> q3
+delta q3 0 q4
+delta q3 1 q4
+delta q3 <eps> q4
+q0 q1
+F q4
