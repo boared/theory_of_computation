@@ -80,7 +80,7 @@ std::vector<std::string> readLanguageFile(const std::string& path) {
 
     if (file.is_open()) {
         while (getline(file, line)) {
-            if (line.size() > 0 && line[0] != '#' ) {
+            if (line[0] != '#' ) {
                 words.push_back(line);
             }
         }

@@ -70,25 +70,24 @@ namespace machine {
             bool accept(const std::string& tab, const State& currentState, const std::string& word) {
                 // Symbol to be evaluated
                 const std::string symbol = word.empty() ? EMPTY_WORD : word.substr(0, 1);
+                bool accept = false;
 
-                // Let's check if there's any e-move to be made
-                std::set<State> e_move_states = transition(tab, currentState, EMPTY_WORD);
-
-                // If no more symbols to be read and no e-moves to carry out, this branch has been executed to the
-                // end and we can return the result
-                if (word.empty() && e_move_states.empty()) {
-                    return isAcceptState(currentState);
+                // If there are no more symbols to be read we can check if this is an accept state or not. We still
+                // need to account the e-moves
+                if (word.empty()) {
+                    accept = isAcceptState(currentState);
                 }
 
-                // Get the transitions from this state
+                // Get the state transitions from this state
+                std::set<State> e_move_states = transition(tab, currentState, EMPTY_WORD);
                 std::set<State> states = symbol != EMPTY_WORD ? transition(tab, currentState, symbol) : std::set<State>();
 
-                // If the current state has no transitions and no e-moves, this branch must die and we return false.
+                // If the current state has no transitions and no e-moves, this branch must die and we return. It might
+                // returns false because there's nowhere else to go or the result of acceptance checking because
+                // there's no more symbols to be read
                 if (states.empty() && e_move_states.empty()) {
-                    return false;
+                    return accept;
                 }
-
-                bool accept = false;
 
                 // Let's now execute the e-moves if it exists. Notice that we pass the same input word to the accept
                 // method as we will process the same head symbol inside the e-move branch
