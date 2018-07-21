@@ -18,7 +18,7 @@ namespace machine {
      *      δ = transition function defined as:
      *          δ: Q X {∑, ε} --> P(Q),
      *              where ε denotes the empty string - that means the transition is done
-     *              but the next symbol is not read - and P(Q) is the power set of Q.
+     *              but the next symbol is not read, also called e-move - and P(Q) is the power set of Q.
      *      q0 = initial state
      *      F = subset of Q containing the accept states
      * 
@@ -69,38 +69,29 @@ namespace machine {
              */
             bool accept(const std::string& tab, const State& currentState, const std::string& word) {
                 // Symbol to be evaluated
-                std::string symbol;
+                const std::string symbol = word.empty() ? EMPTY_WORD : word.substr(0, 1);
 
-                // Check if the current state has e-moves. That means we need to execute e-move branches without
-                // reading the next symbol
+                // Let's check if there's any e-move to be made
                 std::set<State> e_move_states = transition(tab, currentState, EMPTY_WORD);
 
-                if (word.empty()) {
-                    symbol = EMPTY_WORD;
-
-                    // If there's no further data in input to be read and no e-moves, then
-                    // verify if the word is accepted or not
-                    if (e_move_states.empty()) {
-                        return isAcceptState(currentState);
-                    }
-                } else {
-                    symbol = word[0];
+                // If no more symbols to be read and no e-moves to carry out, this branch has been executed to the
+                // end and we can return the result
+                if (word.empty() && e_move_states.empty()) {
+                    return isAcceptState(currentState);
                 }
 
-                // Let's check which transitions we need to do
-                std::set<State> states;
-                if (symbol != EMPTY_WORD) {
-                    states = transition(tab, currentState, symbol);
+                // Get the transitions from this state
+                std::set<State> states = symbol != EMPTY_WORD ? transition(tab, currentState, symbol) : std::set<State>();
+
+                // If the current state has no transitions and no e-moves, this branch must die and we return false.
+                if (states.empty() && e_move_states.empty()) {
+                    return false;
                 }
 
                 bool accept = false;
 
-                // We're going to execute all transitions and e-moves now. Theorethically they run in parallel, but
-                // we're executing them sequentially here for simplicity. If any replicated machine returns true, then
-                // the machine accepts the word.
-
-                // Let's execute the e-moves now. Notice that we pass the same input word to the accept method as we
-                // will process the same head symbol in the e-move branch
+                // Let's now execute the e-moves if it exists. Notice that we pass the same input word to the accept
+                // method as we will process the same head symbol inside the e-move branch
                 for (const State& state : e_move_states) {
                     NFA m(*this);
                     accept = m.accept(tab + "|" + TAB, state, word) || accept;
