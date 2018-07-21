@@ -103,13 +103,13 @@ namespace machine {
                 // will process the same head symbol in the e-move branch
                 for (const State& state : e_move_states) {
                     NFA m(*this);
-                    accept = accept || m.accept(tab + "|" + TAB, state, word);
+                    accept = m.accept(tab + "|" + TAB, state, word) || accept;
                 }
 
                 // Let's execute the transitions. Notice that we remove the symbol processed here for the further steps.
                 for (const State& state : states) {
                     NFA m(*this);
-                    accept = accept || m.accept(tab + "|" + TAB, state, word.substr(1, std::string::npos));
+                    accept = m.accept(tab + "|" + TAB, state, word.substr(1, std::string::npos)) || accept;
                 }
 
                 return accept;
